@@ -1,12 +1,13 @@
 #!/usr/bin/env Rscript
 #
+#
 # VMwrae Tanzu Support for Daatabase
 # Staff Product Support Engineer
 # Jack, Moon <moonja@vmware.com>
 #
 # ChangeLog
 # 2023-05-20 - Cloned initally from http://gpdbkr.blogspot.com/search/label/GPDB6%20R%EC%84%A4%EC%B9%98
-# 2023-05-22 - Add getopt option
+# 2023-05-22 - Add getopt option and functions were divided by operations
 
 mainDir <- "./"
 subDir <- "r-pkgs"
@@ -62,22 +63,26 @@ getPkgs <- function(packs) {
 }
 
 #
-setPkgs <- function(packs) {
+setPkgs <- function(packs, location) {
 
-  # print("************************** Setup Packages *************************")
-  pkg.list <- list.files( file.path(mainDir, subDir) )
+  if ( location == 0 )  { 
 
-  pkg.list <- setdiff( pkg.list, installed.packages()[, "Package"] )
-  for( p in pkg.list ) {
-    pkg.path <- file.path( file.path(mainDir, subDir), p )
-    install.packages(pkg.path, repos = NULL, type="source")
-    # install.packages( pkg.path, repos = NULL, dependencies = TRUE, tpye=binary )
-  }
+    # print("************************** Setup Packages *************************")
+    pkg.list <- list.files( file.path(mainDir, subDir) )
 
-}
+    pkg.list <- setdiff( pkg.list, installed.packages()[, "Package"] )
+    for( p in pkg.list ) {
+      pkg.path <- file.path( file.path(mainDir, subDir), p )
+      install.packages(pkg.path, repos = NULL, type="source")
+      # install.packages( pkg.path, repos = NULL, dependencies = TRUE, tpye=binary )
+    }
 
-setPkgsRep <- function(packs) {
-  install.packages(c("rvest"), repos = "http://cran.us.r-project.org", dependencies = TRUE)
+  } else if ( tolower(location) == tolower("remote") ) {
+    install.packages(c(packs), repos = mirrorSite, dependencies = TRUE)
+  } else {
+    cat(getopt(spec, usage=TRUE))
+  } 
+
 }
 
 #
@@ -161,39 +166,35 @@ if ( opt$verbose ) {
      For examples how to use this proglem,
 
      1) Download all Packages from CRAN Repository
-     $ ./ctrl_r_pkgs.rs -o get -p all 
+     $ ./ctrl_r_pkgs.rs -o download -p all 
 
      2) Download the specfic Packages from CRAN Repository
-     $ ./ctrl_r_pkgs.rs -o get -p ipred
+     $ ./ctrl_r_pkgs.rs -o download -p ipred
 
      3) Install the specfic Packages from direcotry where packages were downloaded
-     $ ./ctrl_r_pkgs.rs -o get -p ipred
+     $ ./ctrl_r_pkgs.rs -o install -p ipred
 
      4) Install the specfic packages from CRAM Repository without download
-     $ ./ctrl_r_pkgs.rs -o get -p ipred -l remote
+     $ ./ctrl_r_pkgs.rs -o download -p ipred -l remote
     
      5) Uninstall the specific packages installed 
-     $ ./ctrl_r_pkgs.rs -o remove -p ipred
+     $ ./ctrl_r_pkgs.rs -o uninstall -p ipred
 
      5) Uninstall all packages installed 
-     $ ./ctrl_r_pkgs.rs -o remove -p all
+     $ ./ctrl_r_pkgs.rs -o uninstall -p all
     ",
     stderr()
   )
 }
 
-
 if ( !is.null(opt$package) && !is.null(opt$operation) ) {
-  if ((tolower(opt$operation) == tolower("get")) && (tolower(opt$package) != tolower("all")))      { getPkgs(opt$package) }
-  if ((tolower(opt$operation) == tolower("get")) && (tolower(opt$package) == tolower("all")))      { getAllPkgs() }
-  if ((tolower(opt$operation) == tolower("remove")) && (tolower(opt$package) == tolower("all")))   { rmAllPkgs() }
-  if ((tolower(opt$operation) == tolower("remove")) && (tolower(opt$package) != tolower("all")))   { rmPkgs(opt$package) }
-  if ( tolower(opt$operation) == tolower("setup"))                                                 { setPkgs(opt$package) }
-  if ( tolower(opt$operation) == tolower("delete"))                                                { delPkgs(opt$package) }
+  if ((tolower(opt$operation) == tolower("download")) && (tolower(opt$package) != tolower("all")))      { getPkgs(opt$package) }
+  if ((tolower(opt$operation) == tolower("download")) && (tolower(opt$package) == tolower("all")))      { getAllPkgs() }
+  if ((tolower(opt$operation) == tolower("uninstall")) && (tolower(opt$package) == tolower("all")))     { rmAllPkgs() }
+  if ((tolower(opt$operation) == tolower("uninstall")) && (tolower(opt$package) != tolower("all")))     { rmPkgs(opt$package) }
+  if ( tolower(opt$operation) == tolower("install"))                                                    { setPkgs(opt$package,opt$location) }
+  if ( tolower(opt$operation) == tolower("delete"))                                                     { delPkgs(opt$package) }
 }
-
-# signal success and exit.
-# q(status=0)
 
 # Install R binardy 
 # https://docs.posit.co/resources/install-r/
