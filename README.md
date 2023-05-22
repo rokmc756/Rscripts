@@ -7,3 +7,5 @@
 # https://www.rdocumentation.org/packages/utils/versions/3.6.2/topics/install.packages
 # https://cran.r-project.org/bin/windows/base/howto-R-devel.html
 # https://cran.r-project.org/doc/manuals/r-release/R-admin.html
+
+https://enchufa2.github.io/rspm/
