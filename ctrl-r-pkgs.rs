@@ -145,7 +145,7 @@ if ( !is.null(opt$help) ) {
   # q(status=1)
 
   write(
-    "Usage: ./ctrl-r-pkgs.rs -o <setup|remove|delete> -p <package name> -l <local|remote>"
+    "Usage: ./ctrl-r-pkgs.rs -o <setup|remove|delete> -p <package name> or with -l <remote>"
     ,
     stderr()
   )
@@ -177,7 +177,7 @@ if ( opt$verbose ) {
      4) Install the specfic packages from CRAM Repository without download
      $ ./ctrl_r_pkgs.rs -o download -p ipred -l remote
     
-     5) Uninstall the specific packages installed 
+     5) Uninstall the specific packages installed
      $ ./ctrl_r_pkgs.rs -o uninstall -p ipred
 
      5) Uninstall all packages installed 
