@@ -8,21 +8,31 @@
 # ChangeLog
 # 2023-05-20 - Cloned initally from http://gpdbkr.blogspot.com/search/label/GPDB6%20R%EC%84%A4%EC%B9%98
 # 2023-05-22 - Add getopt option and functions were divided by operations
+# 2023-05-26 - Changed how to install from local directory where packages were downloaded
 
 mainDir <- "./"
-subDir <- "r-pkgs"
+subDir <- "src/contrib"
 dir.create(file.path(mainDir, subDir), showWarnings = FALSE)
-mirrorSite <- "https://cran.yu.ac.kr"  # The main site - "https://cloud.r-project.org"
+# originSite <- "https://cran.yu.ac.kr"  # The main site - "https://cloud.r-project.org"
+# mirrorSite <- "https://cloud.r-project.org"
+mirrorSite <- "file:///tmp/nfsshare/r-pkgs"
 
 #
 getAllPkgs <- function() {
 
-  # print("************************** Get All Packages *************************")
+  print("************************** Get All Packages *************************")
   library("rvest")
   pkgs <- read_html(paste(mirrorSite,"web/packages/available_packages_by_name.html",sep="/"))
   tab <- html_nodes(pkgs, "table") %>% html_table(fill = TRUE)
   pkgnames <- tab[[1]][1]$X1
   pkgnames <- pkgnames[nchar(pkgnames)>0]
+
+  # 
+  # temporary_file <- tempfile(fileext = ".tar.gz")
+  #for (x in pkgnames) {
+  #  print(paste(mainDir,subDir,"/",pkgnames,sep=""))
+  #}
+  #
 
   options(repos = c(CRAN <- mirrorSite ))
   download.packages(pkgnames, destdir=file.path(mainDir, subDir))
@@ -30,14 +40,39 @@ getAllPkgs <- function() {
 }
 
 #
-depPkgs <- function() {
+depPkgs <- function(packs, location) {
 
-  # print("************************** Setup Dependency Packages *************************")
+  print("************************** Setup Dependency Packages *************************")
+ 
   dep_packages <- c( "getopt", "rvest" )                                       		         # Specify your packages
-  not_installed <- dep_packages[!(dep_packages %in% installed.packages()[ , "Package"])] # Extract not installed packages
+  not_installed <- dep_packages[!(dep_packages %in% installed.packages()[ , "Package"])]         # Extract not installed packages
 
-  options(repos = c(CRAN <- mirrorSite))
-  if(length(not_installed)) install.packages(not_installed)
+  pkg.list <- list.files( file.path(mainDir, subDir) )
+  pkg.list <- setdiff( pkg.list, installed.packages()[, "Package"] )
+
+  # Firstly try to install dependent packages from directory where packages were downloaded
+  if ( length(not_installed) ) { 
+    for ( p in dep_packages ) {
+      for ( dp in pkg.list ) {
+        # print(grep(dp, p, ignore.case ="True")) 
+        if ( grepl(p, dp, fixed = TRUE) ) {
+          print(dp)
+  	  if (( location == 0 ) || ( location == "local" )) { 
+    	    pkg.path <- file.path( file.path(mainDir, subDir), dp )
+            install.packages( pkg.path, repos = NULL, dependencies = TRUE, tpye=source )
+          } else if ( tolower(location) == tolower("remote") ) {
+  	    options(repos = c(CRAN <- mirrorSite))
+	    install.packages(c(p), repos = mirrorSite, dependencies = TRUE)
+          } else {
+  	    write("Exceptions: check your command and see details how to run with ./r-packman.rs -v or -h ",stderr())
+          }
+        }
+      }
+    }
+  } else {
+    print("Dependent packages are already installed")
+    # print(not_installed)
+  }
 
 }
 
@@ -58,32 +93,62 @@ getPkgs <- function(packs) {
 
   options(repos = c(CRAN <- mirrorSite))
   packages <- infoPackages(c(packs))
-  download.packages(packages, destdir=file.path(mainDir, subDir), type="binary")
+  download.packages(packages, destdir=file.path(mainDir, subDir))
+  # download.packages(packages, destdir=file.path(mainDir, subDir), type="binary")
 
 }
 
 #
 setPkgs <- function(packs, location) {
 
-  if ( location == 0 )  { 
+  print("************************** Setup Packages *************************")
+  pkg.list <- list.files( file.path(mainDir, subDir) )
+  pkg.list <- setdiff( pkg.list, installed.packages()[, "Package"] )
 
+  #
+  if ( packs != "dep" ) {
+    for( p in packs ) {
+      for ( dp in pkg.list ) {
+        if ( grepl(p, dp, fixed = TRUE) ) {
+          if (( location == 0 ) || ( location == "local" )) { 
+  	    pkg.path <- file.path( file.path(mainDir, subDir), dp )
+            # install.packages( pkg.path, repos = NULL, dependencies = TRUE, tpye=source )
+	    install.packages(c(p), repos = mirrorSite, dependencies = TRUE)
+          } else if ( tolower(location) == tolower("remote")) {
+            options(repos = c(CRAN <- mirrorSite))
+	    install.packages(c(p), repos = mirrorSite, dependencies = TRUE)
+          }
+        }
+      } 
+    }
+  } else {
+    print("Choose other package name since '-p dep' is recognized as installing dependent packages in this program")
+  }
+
+  #  cat(getopt(spec, usage=TRUE))
+
+}
+
+#
+updPkgs <- function(packs, location) {
+
+  if ( location == 0 )  {
     # print("************************** Setup Packages *************************")
     pkg.list <- list.files( file.path(mainDir, subDir) )
 
     pkg.list <- setdiff( pkg.list, installed.packages()[, "Package"] )
     for( p in pkg.list ) {
       pkg.path <- file.path( file.path(mainDir, subDir), p )
-      install.packages(pkg.path, repos = NULL, type="source")
+      update.packages(pkg.path, repos = NULL, type="source")
       # install.packages( pkg.path, repos = NULL, dependencies = TRUE, tpye=binary )
     }
-
   } else if ( tolower(location) == tolower("remote") ) {
-    install.packages(c(packs), repos = mirrorSite, dependencies = TRUE)
+    update.packages(c(packs), repos = mirrorSite, dependencies = TRUE)
   } else {
     cat(getopt(spec, usage=TRUE))
-  } 
-
+  }
 }
+
 
 #
 rmPkgs <- function(packs) {
@@ -98,6 +163,7 @@ rmPkgs <- function(packs) {
   #}
 
 }
+
 
 # Remove all user installed packages without removing any base packages for R or MRO.
 rmAllPkgs <- function() {
@@ -125,7 +191,7 @@ rmAllPkgs <- function() {
 }
 
 # Install getopt and revest if not exist in order to specify packages for download and 
-depPkgs()
+# depPkgs()
 
 # Get options, using the spec as defined by the enclosed list. It reads the options from the default: commandArgs(TRUE).
 library('getopt')
@@ -145,7 +211,7 @@ if ( !is.null(opt$help) ) {
   # q(status=1)
 
   write(
-    "Usage: ./ctrl-r-pkgs.rs -o <setup|remove|delete> -p <package name> or with -l <remote>"
+    "Usage: ./r-packman.rs -o <setup|remove|delete> -p <package name> or with -l <remote>"
     ,
     stderr()
   )
@@ -192,7 +258,9 @@ if ( !is.null(opt$package) && !is.null(opt$operation) ) {
   if ((tolower(opt$operation) == tolower("download")) && (tolower(opt$package) == tolower("all")))      { getAllPkgs() }
   if ((tolower(opt$operation) == tolower("uninstall")) && (tolower(opt$package) == tolower("all")))     { rmAllPkgs() }
   if ((tolower(opt$operation) == tolower("uninstall")) && (tolower(opt$package) != tolower("all")))     { rmPkgs(opt$package) }
+  if ((tolower(opt$operation) == tolower("install")) && (tolower(opt$package) == tolower("dep")))       { depPkgs(opt$package,opt$location) }
   if ( tolower(opt$operation) == tolower("install"))                                                    { setPkgs(opt$package,opt$location) }
+  if ( tolower(opt$operation) == tolower("update"))                                                     { updPkgs(opt$package,opt$location) }
   if ( tolower(opt$operation) == tolower("delete"))                                                     { delPkgs(opt$package) }
 }
 
@@ -204,3 +272,4 @@ if ( !is.null(opt$package) && !is.null(opt$operation) ) {
 # https://www.rdocumentation.org/packages/utils/versions/3.6.2/topics/install.packages
 # https://cran.r-project.org/bin/windows/base/howto-R-devel.html
 # https://cran.r-project.org/doc/manuals/r-release/R-admin.html
+# https://www.rdocumentation.org/packages/utils/versions/3.6.2/topics/download.packages
