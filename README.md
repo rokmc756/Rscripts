@@ -1,4 +1,4 @@
-## How to run this program
+## How to run r-packman.rs for downloading packages / configuring local repository
 ~~~
 $ ./r-packman.rs -h
 [1] "Dependent packages are already installed or downloaded on local repository"
@@ -26,9 +26,7 @@ $ ./r-packman.rs -v
      $ ./r_packman.rs -o uninstall -p all
 ~~~
 
-
-## Refrences 
-### [ Install R binardy ]
+## Refrences
 * https://docs.posit.co/resources/install-r/
 * https://docs.posit.co/rpm/installation/
 * https://docs.posit.co/rspm/admin/repositories/#multiple-sources
