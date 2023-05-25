@@ -1,4 +1,19 @@
-## How to run r-packman.rs for downloading packages / configuring local repository
+## What is R Packman?
+The purposes of this R script are to download all R packages from CRAN repository and configure local repostiory to use it in dark site where internet could not be connected.
+After configuring local repostory you could install and uninstall packages from local repository firstl.
+In case there are no packages in local repository this script would connect automatically into CRAN repository.
+
+## Supported and confirmed OS versoins so far
+RHEL, CentOS 7.x
+RHEL, Rocky Linux 8 and 9.x
+
+## How to configure local repository
+### The following command would create src/contrib directory under current directory and then download all packages and metadata, PACKAGES from CRAN repository.
+~~
+$ ./r-packman.rs -o download -p all
+~~
+
+## How to use it
 ~~~
 $ ./r-packman.rs -h
 [1] "Dependent packages are already installed or downloaded on local repository"
