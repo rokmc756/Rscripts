@@ -8,10 +8,10 @@ RHEL, CentOS 7.x
 RHEL, Rocky Linux 8 and 9.x
 
 ## How to configure local repository
-### The following command would create src/contrib directory under current directory and then download all packages and metadata, PACKAGES from CRAN repository.
-~~
+#### The following command would create src/contrib directory under current directory and then download all packages and metadata, PACKAGES from CRAN repository.
+~~~
 $ ./r-packman.rs -o download -p all
-~~
+~~~
 
 ## How to use it
 ~~~
