@@ -13,65 +13,47 @@
 mainDir <- "./"
 subDir <- "src/contrib"
 dir.create(file.path(mainDir, subDir), showWarnings = FALSE)
-# originSite <- "https://cran.yu.ac.kr"  # The main site - "https://cloud.r-project.org"
-# mirrorSite <- "https://cloud.r-project.org"
-mirrorSite <- "file:///tmp/nfsshare/r-pkgs"
+originSite <- "https://cloud.r-project.org"
+mirrorSite <- "https://cran.yu.ac.kr"
+localSite <- "file:///tmp/nfsshare/r-pkgs"
 
 #
 getAllPkgs <- function() {
 
   print("************************** Get All Packages *************************")
+  # Get the metadata of all packages
+  destfile <- file.path(mainDir, paste(subDir,"/PACKAGES",sep=""))
+  url <- paste(mirrorSite, paste("/",subDir,"/PACKAGES",sep=""),sep="")
+  download.file(url, destfile)
+
+  # Get all packages
   library("rvest")
   pkgs <- read_html(paste(mirrorSite,"web/packages/available_packages_by_name.html",sep="/"))
   tab <- html_nodes(pkgs, "table") %>% html_table(fill = TRUE)
   pkgnames <- tab[[1]][1]$X1
   pkgnames <- pkgnames[nchar(pkgnames)>0]
 
-  # 
-  # temporary_file <- tempfile(fileext = ".tar.gz")
-  #for (x in pkgnames) {
-  #  print(paste(mainDir,subDir,"/",pkgnames,sep=""))
-  #}
-  #
-
   options(repos = c(CRAN <- mirrorSite ))
   download.packages(pkgnames, destdir=file.path(mainDir, subDir))
 
 }
 
-#
-depPkgs <- function(packs, location) {
+depPkgs <- function() {
 
   print("************************** Setup Dependency Packages *************************")
- 
-  dep_packages <- c( "getopt", "rvest" )                                       		         # Specify your packages
-  not_installed <- dep_packages[!(dep_packages %in% installed.packages()[ , "Package"])]         # Extract not installed packages
+  dep_packs <- c("getopt","rvest","tseries")
+  not_installed <- dep_packs[!(dep_packs %in% installed.packages()[ , "Package"])]
 
-  pkg.list <- list.files( file.path(mainDir, subDir) )
-  pkg.list <- setdiff( pkg.list, installed.packages()[, "Package"] )
-
-  # Firstly try to install dependent packages from directory where packages were downloaded
-  if ( length(not_installed) ) { 
-    for ( p in dep_packages ) {
-      for ( dp in pkg.list ) {
-        # print(grep(dp, p, ignore.case ="True")) 
-        if ( grepl(p, dp, fixed = TRUE) ) {
-          print(dp)
-  	  if (( location == 0 ) || ( location == "local" )) { 
-    	    pkg.path <- file.path( file.path(mainDir, subDir), dp )
-            install.packages( pkg.path, repos = NULL, dependencies = TRUE, tpye=source )
-          } else if ( tolower(location) == tolower("remote") ) {
-  	    options(repos = c(CRAN <- mirrorSite))
-	    install.packages(c(p), repos = mirrorSite, dependencies = TRUE)
-          } else {
-  	    write("Exceptions: check your command and see details how to run with ./r-packman.rs -v or -h ",stderr())
-          }
-        }
-      }
-    }
+  if ( length(not_installed) ) {
+    ie <- install.packages(c(dep_packs), repos = localSite, dependencies = TRUE)
+    tryCatch(
+      stop(ie),
+      warning = install.packages(c(dep_packs), repos = mirrorSite, dependencies = TRUE),
+      error = install.packages(c(dep_packs), repos = mirrorSite, dependencies = TRUE),
+      finally = install.packages(c(dep_packs), repos = originSite, dependencies = TRUE)
+    )
   } else {
-    print("Dependent packages are already installed")
-    # print(not_installed)
+    print(paste("Dependent packages are already installed or downloaded on local repository"))
   }
 
 }
@@ -79,6 +61,7 @@ depPkgs <- function(packs, location) {
 #
 infoPkgs <- function(packs) {
 
+  print("************************** Print Packages Info *************************")
   packages <- unlist(
     # Find (recursively) dependencies or reverse dependencies of packages.
     tools::package_dependencies(packs, available.packages(), which=c("Depends", "Imports"), recursive=TRUE)
@@ -91,6 +74,7 @@ infoPkgs <- function(packs) {
 #
 getPkgs <- function(packs) {
 
+  print("************************** Download Packages *****************************")
   options(repos = c(CRAN <- mirrorSite))
   packages <- infoPackages(c(packs))
   download.packages(packages, destdir=file.path(mainDir, subDir))
@@ -99,68 +83,56 @@ getPkgs <- function(packs) {
 }
 
 #
-setPkgs <- function(packs, location) {
+setPkgs <- function(packs) {
 
-  print("************************** Setup Packages *************************")
-  pkg.list <- list.files( file.path(mainDir, subDir) )
-  pkg.list <- setdiff( pkg.list, installed.packages()[, "Package"] )
+  print("************************** Install Packages *****************************")
+  not_installed <- packs[!(packs %in% installed.packages()[ , "Package"])]         
 
-  #
-  if ( packs != "dep" ) {
-    for( p in packs ) {
-      for ( dp in pkg.list ) {
-        if ( grepl(p, dp, fixed = TRUE) ) {
-          if (( location == 0 ) || ( location == "local" )) { 
-  	    pkg.path <- file.path( file.path(mainDir, subDir), dp )
-            # install.packages( pkg.path, repos = NULL, dependencies = TRUE, tpye=source )
-	    install.packages(c(p), repos = mirrorSite, dependencies = TRUE)
-          } else if ( tolower(location) == tolower("remote")) {
-            options(repos = c(CRAN <- mirrorSite))
-	    install.packages(c(p), repos = mirrorSite, dependencies = TRUE)
-          }
-        }
-      } 
-    }
+  if ( length(not_installed) ) {
+    ie <- install.packages(c(packs), repos = localSite, dependencies = TRUE)
+    tryCatch(
+      stop(ie),
+      warning = install.packages(c(packs), repos = mirrorSite, dependencies = TRUE),
+      error = install.packages(c(packs), repos = mirrorSite, dependencies = TRUE),
+      finally = install.packages(c(packs), repos = originSite, dependencies = TRUE)
+    )
   } else {
-    print("Choose other package name since '-p dep' is recognized as installing dependent packages in this program")
+    print(paste("Packages are already installed or downloaded on local repository"))
   }
-
-  #  cat(getopt(spec, usage=TRUE))
 
 }
 
 #
-updPkgs <- function(packs, location) {
+updPkgs <- function(packs) {
 
-  if ( location == 0 )  {
-    # print("************************** Setup Packages *************************")
-    pkg.list <- list.files( file.path(mainDir, subDir) )
+  print("************************** Update Packages *****************************")
+  upd_packs <- packs
+  installed <- upd_packs[(upd_packs %in% installed.packages()[ , "Package"])]
 
-    pkg.list <- setdiff( pkg.list, installed.packages()[, "Package"] )
-    for( p in pkg.list ) {
-      pkg.path <- file.path( file.path(mainDir, subDir), p )
-      update.packages(pkg.path, repos = NULL, type="source")
-      # install.packages( pkg.path, repos = NULL, dependencies = TRUE, tpye=binary )
-    }
-  } else if ( tolower(location) == tolower("remote") ) {
-    update.packages(c(packs), repos = mirrorSite, dependencies = TRUE)
+  #print("*********************************************************************")
+  #update.packages(c(upd_packs), repos = mirrorSite, dependencies = TRUE)
+  #print("*********************************************************************")
+
+  if ( length(installed) ) {
+    ue <- update.packages(c(upd_packs), repos = mirrorSite, dependencies = TRUE)
+    tryCatch(
+      stop(ue),
+      warning = update.packages(c(upd_packs), repos = mirrorSite, dependencies = TRUE),
+      error = update.packages(c(upd_packs), repos = originSite, dependencies = TRUE),
+      finally = print("Completed to update packages")
+    )
   } else {
-    cat(getopt(spec, usage=TRUE))
+    print("Packages are already updated")
   }
+
 }
 
 
 #
 rmPkgs <- function(packs) {
 
-  #file.list <- list.files( file.path(mainDir, subDir) )
-  #pkg.list <- setdiff( file.list, installed.packages()[, "Package"] )
-  #for( p in pkg.list ) {
-  #  pkg.path <- file.path( file.path(mainDir, subDir), p )
+  print("************************** Uninstall Packages  *****************************")
   remove.packages( packs )
-    #, repos = NULL, dependencies = TRUE )
-    # install.packages(pk.path, repos = NULL, type="source")
-  #}
 
 }
 
@@ -168,6 +140,7 @@ rmPkgs <- function(packs) {
 # Remove all user installed packages without removing any base packages for R or MRO.
 rmAllPkgs <- function() {
 
+  print("************************** Uninstall All Packages  *****************************")
   # Create a list of all installed packages
   resPkgs <- as.data.frame(installed.packages())
   head(resPkgs)
@@ -191,7 +164,7 @@ rmAllPkgs <- function() {
 }
 
 # Install getopt and revest if not exist in order to specify packages for download and 
-# depPkgs()
+depPkgs()
 
 # Get options, using the spec as defined by the enclosed list. It reads the options from the default: commandArgs(TRUE).
 library('getopt')
@@ -199,11 +172,10 @@ spec = matrix(c(
   'verbose',    'v',   2, "integer",
   'help'   ,    'h',   0, "logical",
   'package',    'p',   1, "character",
-  'operation',  'o',   1, "character",
-  'location',   'l',   1, "character"
+  'operation',  'o',   1, "character"
 ), byrow=TRUE, ncol=4)
 
-opt = getopt(spec) 
+opt = getopt(spec)
 
 # If help was asked for print a friendly message and exit with a non-zero error code
 if ( !is.null(opt$help) ) {
@@ -211,7 +183,7 @@ if ( !is.null(opt$help) ) {
   # q(status=1)
 
   write(
-    "Usage: ./r-packman.rs -o <setup|remove|delete> -p <package name> or with -l <remote>"
+    "Usage: ./r-packman.rs -o <install|uninstall> -p <package name>"
     ,
     stderr()
   )
@@ -223,7 +195,6 @@ if ( is.null(opt$verbose   ) )  { opt$verbose    = FALSE }
 if ( is.null(opt$help      ) )  { opt$help       = 0     }
 if ( is.null(opt$operatio  ) )  { opt$operation  = 0     }
 if ( is.null(opt$package   ) )  { opt$package    = 0     }
-if ( is.null(opt$location  ) )  { opt$location   = 0     }
 
 # Print some progress messages to stderr, if requested.
 if ( opt$verbose ) {
@@ -232,22 +203,19 @@ if ( opt$verbose ) {
      For examples how to use this proglem,
 
      1) Download all Packages from CRAN Repository
-     $ ./ctrl_r_pkgs.rs -o download -p all 
+     $ ./r-packman.rs -o download -p all
 
      2) Download the specfic Packages from CRAN Repository
-     $ ./ctrl_r_pkgs.rs -o download -p ipred
+     $ ./r-packman.rs -o download -p ipred
 
      3) Install the specfic Packages from direcotry where packages were downloaded
-     $ ./ctrl_r_pkgs.rs -o install -p ipred
+     $ ./r-packman.rs -o install -p ipred
 
-     4) Install the specfic packages from CRAM Repository without download
-     $ ./ctrl_r_pkgs.rs -o download -p ipred -l remote
-    
-     5) Uninstall the specific packages installed
-     $ ./ctrl_r_pkgs.rs -o uninstall -p ipred
+     4) Uninstall the specific packages installed
+     $ ./r_packman.rs -o uninstall -p ipred
 
-     5) Uninstall all packages installed 
-     $ ./ctrl_r_pkgs.rs -o uninstall -p all
+     5) Uninstall all packages installed
+     $ ./r_packman.rs -o uninstall -p all
     ",
     stderr()
   )
@@ -258,18 +226,7 @@ if ( !is.null(opt$package) && !is.null(opt$operation) ) {
   if ((tolower(opt$operation) == tolower("download")) && (tolower(opt$package) == tolower("all")))      { getAllPkgs() }
   if ((tolower(opt$operation) == tolower("uninstall")) && (tolower(opt$package) == tolower("all")))     { rmAllPkgs() }
   if ((tolower(opt$operation) == tolower("uninstall")) && (tolower(opt$package) != tolower("all")))     { rmPkgs(opt$package) }
-  if ((tolower(opt$operation) == tolower("install")) && (tolower(opt$package) == tolower("dep")))       { depPkgs(opt$package,opt$location) }
-  if ( tolower(opt$operation) == tolower("install"))                                                    { setPkgs(opt$package,opt$location) }
-  if ( tolower(opt$operation) == tolower("update"))                                                     { updPkgs(opt$package,opt$location) }
+  if ( tolower(opt$operation) == tolower("install"))                                                    { setPkgs(opt$package) }
+  if ( tolower(opt$operation) == tolower("update"))                                                     { updPkgs(opt$package) }
   if ( tolower(opt$operation) == tolower("delete"))                                                     { delPkgs(opt$package) }
 }
-
-# Install R binardy 
-# https://docs.posit.co/resources/install-r/
-# https://docs.posit.co/rspm/admin/repositories/#multiple-sources
-# ttps://docs.posit.co/rspm/admin/appendix/system-dependency-detection/
-# https://github.com/rstudio/r-builds
-# https://www.rdocumentation.org/packages/utils/versions/3.6.2/topics/install.packages
-# https://cran.r-project.org/bin/windows/base/howto-R-devel.html
-# https://cran.r-project.org/doc/manuals/r-release/R-admin.html
-# https://www.rdocumentation.org/packages/utils/versions/3.6.2/topics/download.packages
