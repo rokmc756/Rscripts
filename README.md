@@ -9,6 +9,12 @@ Additionally you could download,install and uninstall multiple packages with opt
 RHEL, CentOS 7.x
 RHEL, Rocky Linux 8 and 9.x
 
+## How to get it
+~~~
+$ git clone https://github.com/rokmc756/Rscripts
+$ cd Rscripts
+~~~
+
 ## How to configure local repository
 #### The following command would create src/contrib directory under current directory and then download metadata, PACKAGES and all packages from mirror CRAN repository.
 ~~~
