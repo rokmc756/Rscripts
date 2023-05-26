@@ -1,45 +1,72 @@
-## What is R Packman?
-The purposes of this R script are to download all R packages from CRAN repository and configure local repostiory to use it in dark site where internet could not be connected.
-After configuring local repostory you could install and uninstall packages from local repository firstl.
+## What is R Packman and the purpose of it?
+The purposes of this R script is to download all R packages from CRAN repository and configure local repostiory to use it in dark site where internet could not be connected.
+After configuring local repostory you could install and uninstall packages from local repository firstly.
 In case there are no packages in local repository this script would connect automatically into CRAN repository.
+
+Additionally you could download,install and uninstall multiple packages with option specified by comman and listed in a file.
 
 ## Supported and confirmed OS versoins so far
 RHEL, CentOS 7.x
 RHEL, Rocky Linux 8 and 9.x
 
 ## How to configure local repository
-#### The following command would create src/contrib directory under current directory and then download all packages and metadata, PACKAGES from CRAN repository.
+#### The following command would create src/contrib directory under current directory and then download metadata, PACKAGES and all packages from mirror CRAN repository.
 ~~~
 $ ./r-packman.rs -o download -p all
 ~~~
 
 ## How to use it
+#### Download or Install or update or or unstall a package
+~~~
+$ ./r-packman.rs -o <download|install|update|uninstall> -p ipred
+~~~
+#### Download or Install or unistall multiple packages with option seperated by comma
+~~~
+$ ./r-packman.rs -o <download|install|update|uninstall> -p ipred,AAtools
+~~~
+#### Download or Install or update or unstall multiple packages described at a file
+~~~
+$ vi pkglist.csv
+AalenJohansen
+AATtools
+ipred
+
+$ ./r-packman.rs -o <download|install|uninstall> -p pkglist.csv
+~~~
+
+#### Simple usage
 ~~~
 $ ./r-packman.rs -h
-[1] "Dependent packages are already installed or downloaded on local repository"
 Usage: ./r-packman.rs -o <install|uninstall> -p <package name>
+~~~
 
+#### Detail usage
+~~~
 $ ./r-packman.rs -v
-[1] "************************** Setup Dependency Packages *************************"
-[1] "Dependent packages are already installed or downloaded on local repository"
-
      For examples how to use this proglem,
 
-     1) Download all Packages from CRAN Repository
+     1) Download all Packages from CRAN Repository and configure local repository
      $ ./r-packman.rs -o download -p all
 
-     2) Download the specfic Packages from CRAN Repository
-     $ ./r-packman.rs -o download -p ipred
+     2) Download or install or update or uninstall the specfic Packages from CRAN Repository
+     $ ./r-packman.rs -o <download|install|update|uninstall> -p ipred
 
-     3) Install the specfic Packages from direcotry where packages were downloaded
-     $ ./r-packman.rs -o install -p ipred
+     3) Download or install or update or uninstall multiple Packages with option from CRAN Repository
+     $ ./r-packman.rs -o <download|install|update|uninstall> -p ipred,AATools
 
-     4) Uninstall the specific packages installed
-     $ ./r-packman.rs -o uninstall -p ipred
+     4) Download or install or update or uninstall multiple Packages with file from CRAN Repository
+     $ vi pkglist.csv
+     AalenJohansen
+     AATtools
+     ipred
+     $ ./r-packman.rs -o <download|install|update|uninstall> -p pkglist.csv
 
-     5) Uninstall all packages installed
+     5) Uninstall all packages installed except base and recommended provided by linux or R destribution.
      $ ./r-packman.rs -o uninstall -p all
 ~~~
+
+## Planning
+#### Still checking which part should it be improvied
 
 ## Refrences
 * https://docs.posit.co/resources/install-r/
