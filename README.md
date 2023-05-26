@@ -35,10 +35,10 @@ $ ./r-packman.rs -v
      $ ./r-packman.rs -o install -p ipred
 
      4) Uninstall the specific packages installed
-     $ ./r_packman.rs -o uninstall -p ipred
+     $ ./r-packman.rs -o uninstall -p ipred
 
      5) Uninstall all packages installed
-     $ ./r_packman.rs -o uninstall -p all
+     $ ./r-packman.rs -o uninstall -p all
 ~~~
 
 ## Refrences

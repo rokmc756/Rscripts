@@ -9,6 +9,7 @@
 # 2023-05-20 - Cloned initally from http://gpdbkr.blogspot.com/search/label/GPDB6%20R%EC%84%A4%EC%B9%98
 # 2023-05-22 - Add getopt option and functions were divided by operations
 # 2023-05-26 - Changed how to install from local directory where packages were downloaded
+#
 
 mainDir <- "./"
 subDir <- "src/contrib"
@@ -20,6 +21,7 @@ localSite <- "file:///tmp/nfsshare/r-pkgs"
 #
 getAllPkgs <- function() {
 
+  print("")
   print("************************** Get All Packages *************************")
   # Get the metadata of all packages
   destfile <- file.path(mainDir, paste(subDir,"/PACKAGES",sep=""))
@@ -40,6 +42,7 @@ getAllPkgs <- function() {
 
 depPkgs <- function() {
 
+  print("")
   print("************************** Setup Dependency Packages *************************")
   dep_packs <- c("getopt","rvest","tseries")
   not_installed <- dep_packs[!(dep_packs %in% installed.packages()[ , "Package"])]
@@ -59,42 +62,44 @@ depPkgs <- function() {
 }
 
 #
-infoPkgs <- function(packs) {
+infoPkgs <- function(pkgs) {
 
+  print("")
   print("************************** Print Packages Info *************************")
   packages <- unlist(
     # Find (recursively) dependencies or reverse dependencies of packages.
-    tools::package_dependencies(packs, available.packages(), which=c("Depends", "Imports"), recursive=TRUE)
+    tools::package_dependencies(pkgs, available.packages(), which=c("Depends", "Imports"), recursive=TRUE)
   )
-  packages <- union(packs, packages)
+  packages <- union(pkgs, packages)
   return(packages)
 
 }
 
 #
-getPkgs <- function(packs) {
+getPkgs <- function(pkgs) {
 
+  print("")
   print("************************** Download Packages *****************************")
   options(repos = c(CRAN <- mirrorSite))
-  packages <- infoPackages(c(packs))
-  download.packages(packages, destdir=file.path(mainDir, subDir))
-  # download.packages(packages, destdir=file.path(mainDir, subDir), type="binary")
+  packages <- infoPkgs(c(pkgs))
+  download.packages(pkgs, destdir=file.path(mainDir, subDir))
 
 }
 
 #
-setPkgs <- function(packs) {
+setPkgs <- function(pkgs) {
 
+  print("")
   print("************************** Install Packages *****************************")
-  not_installed <- packs[!(packs %in% installed.packages()[ , "Package"])]         
+  not_installed <- pkgs[!(pkgs %in% installed.packages()[ , "Package"])]
 
   if ( length(not_installed) ) {
-    ie <- install.packages(c(packs), repos = localSite, dependencies = TRUE)
+    ie <- install.packages(c(pkgs), repos = localSite, dependencies = TRUE)
     tryCatch(
       stop(ie),
-      warning = install.packages(c(packs), repos = mirrorSite, dependencies = TRUE),
-      error = install.packages(c(packs), repos = mirrorSite, dependencies = TRUE),
-      finally = install.packages(c(packs), repos = originSite, dependencies = TRUE)
+      warning = install.packages(c(pkgs), repos = mirrorSite, dependencies = TRUE),
+      error = install.packages(c(pkgs), repos = mirrorSite, dependencies = TRUE),
+      finally = install.packages(c(pkgs), repos = originSite, dependencies = TRUE)
     )
   } else {
     print(paste("Packages are already installed or downloaded on local repository"))
@@ -103,22 +108,18 @@ setPkgs <- function(packs) {
 }
 
 #
-updPkgs <- function(packs) {
+updPkgs <- function(pkgs) {
 
-  print("************************** Update Packages *****************************")
-  upd_packs <- packs
-  installed <- upd_packs[(upd_packs %in% installed.packages()[ , "Package"])]
-
-  #print("*********************************************************************")
-  #update.packages(c(upd_packs), repos = mirrorSite, dependencies = TRUE)
-  #print("*********************************************************************")
+  print("")
+  print(paste("************************** Update ", cat(pkgs) ," Packages *****************************", collapse="\n"))
+  installed <- pkgs[(pkgs %in% installed.packages()[ , "Package"])]
 
   if ( length(installed) ) {
-    ue <- update.packages(c(upd_packs), repos = mirrorSite, dependencies = TRUE)
+    ue <- update.packages(c(packs), repos = mirrorSite, dependencies = TRUE)
     tryCatch(
       stop(ue),
-      warning = update.packages(c(upd_packs), repos = mirrorSite, dependencies = TRUE),
-      error = update.packages(c(upd_packs), repos = originSite, dependencies = TRUE),
+      warning = update.packages(c(packs), repos = mirrorSite, dependencies = TRUE),
+      error = update.packages(c(packs), repos = originSite, dependencies = TRUE),
       finally = print("Completed to update packages")
     )
   } else {
@@ -129,10 +130,17 @@ updPkgs <- function(packs) {
 
 
 #
-rmPkgs <- function(packs) {
+rmPkgs <- function(pkgs) {
 
+  print("")
   print("************************** Uninstall Packages  *****************************")
-  remove.packages( packs )
+  pkgs_installed <- pkgs[(pkgs %in% installed.packages()[ , "Package"])]
+
+  if ( length(pkgs_installed) ) {
+    sapply(c(pkgs), remove.packages)
+  } else {
+    print("There are no packages installed")
+  }
 
 }
 
@@ -140,6 +148,7 @@ rmPkgs <- function(packs) {
 # Remove all user installed packages without removing any base packages for R or MRO.
 rmAllPkgs <- function() {
 
+  print("")
   print("************************** Uninstall All Packages  *****************************")
   # Create a list of all installed packages
   resPkgs <- as.data.frame(installed.packages())
@@ -221,12 +230,26 @@ if ( opt$verbose ) {
   )
 }
 
+
+if ( ! is.null(opt$package ) ) {
+  packs <- opt$package
+  if ( file.exists(packs) ) {
+    pkgs <- read.csv(packs, sep='\n' ,header=FALSE, stringsAsFactors = F)
+    pkgs <- unlist(strsplit(pkgs[,1],' '))
+  } else if ( length(unlist(gregexpr(',', packs))) >= 1 ) {
+    pkgs <- unlist(strsplit(packs, ','))
+  } else {
+    pkgs <- packs
+  }
+
+}
+
 if ( !is.null(opt$package) && !is.null(opt$operation) ) {
-  if ((tolower(opt$operation) == tolower("download")) && (tolower(opt$package) != tolower("all")))      { getPkgs(opt$package) }
+  if ((tolower(opt$operation) == tolower("uninstall")) && (tolower(opt$package) != tolower("all")))     { rmPkgs(pkgs) }
+  if ((tolower(opt$operation) == tolower("download")) && (tolower(opt$package) != tolower("all")))      { getPkgs(pkgs) }
   if ((tolower(opt$operation) == tolower("download")) && (tolower(opt$package) == tolower("all")))      { getAllPkgs() }
   if ((tolower(opt$operation) == tolower("uninstall")) && (tolower(opt$package) == tolower("all")))     { rmAllPkgs() }
-  if ((tolower(opt$operation) == tolower("uninstall")) && (tolower(opt$package) != tolower("all")))     { rmPkgs(opt$package) }
-  if ( tolower(opt$operation) == tolower("install"))                                                    { setPkgs(opt$package) }
-  if ( tolower(opt$operation) == tolower("update"))                                                     { updPkgs(opt$package) }
-  if ( tolower(opt$operation) == tolower("delete"))                                                     { delPkgs(opt$package) }
+  if ( tolower(opt$operation) == tolower("install"))                                                    { setPkgs(pkgs) }
+  if ( tolower(opt$operation) == tolower("update"))                                                     { updPkgs(pkgs) }
+  if ( tolower(opt$operation) == tolower("delete"))                                                     { delPkgs(pkgs) }
 }
