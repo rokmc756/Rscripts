@@ -49,26 +49,26 @@ Usage: ./r-packman.rs -o <install|uninstall> -p <package name>
 #### 5) Detail usage
 ```
 $ ./r-packman.rs -v
-     For examples how to use this proglem,
+For examples how to use this proglem,
 
-     1) Download all Packages from CRAN Repository and configure local repository
-     $ ./r-packman.rs -o download -p all
+1) Download all Packages from CRAN Repository and configure local repository
+$ ./r-packman.rs -o download -p all
 
-     2) Download or install or update or uninstall the specfic Packages from CRAN Repository
-     $ ./r-packman.rs -o <download|install|update|uninstall> -p ipred
+2) Download or install or update or uninstall the specfic Packages from CRAN Repository
+$ ./r-packman.rs -o <download|install|update|uninstall> -p ipred
 
-     3) Download or install or update or uninstall multiple Packages with option from CRAN Repository
-     $ ./r-packman.rs -o <download|install|update|uninstall> -p ipred,AATools
+3) Download or install or update or uninstall multiple Packages with option from CRAN Repository
+$ ./r-packman.rs -o <download|install|update|uninstall> -p ipred,AATools
 
-     4) Download or install or update or uninstall multiple Packages with file from CRAN Repository
-     $ vi pkglist.csv
-     AalenJohansen
-     AATtools
-     ipred
-     $ ./r-packman.rs -o <download|install|update|uninstall> -p pkglist.csv
+4) Download or install or update or uninstall multiple Packages with file from CRAN Repository
+$ vi pkglist.csv
+AalenJohansen
+AATtools
+ipred
+$ ./r-packman.rs -o <download|install|update|uninstall> -p pkglist.csv
 
-     5) Uninstall all packages installed except base and recommended provided by linux or R destribution.
-     $ ./r-packman.rs -o uninstall -p all
+5) Uninstall all packages installed except base and recommended provided by linux or R destribution.
+$ ./r-packman.rs -o uninstall -p all
 ```
 
 ## Planning
