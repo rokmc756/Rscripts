@@ -10,44 +10,44 @@ RHEL, CentOS 7.x
 RHEL, Rocky Linux 8 and 9.x
 
 ## How to get it
-~~~
+```
 $ git clone https://github.com/rokmc756/Rscripts
 $ cd Rscripts
-~~~
+```
 
 ## How to configure local repository
 #### The following command would create src/contrib directory under current directory and then download metadata, PACKAGES and all packages from mirror CRAN repository.
-~~~
+```
 $ ./r-packman.rs -o download -p all
-~~~
+```
 
 ## How to use it
-#### Download or Install or update or or unstall a package
-~~~
+#### 1) Download or Install or update or or unstall a package
+```
 $ ./r-packman.rs -o <download|install|update|uninstall> -p ipred
-~~~
-#### Download or Install or unistall multiple packages with option seperated by comma
-~~~
+```
+#### 2) Download or Install or unistall multiple packages with option seperated by comma
+```
 $ ./r-packman.rs -o <download|install|update|uninstall> -p ipred,AAtools
-~~~
-#### Download or Install or update or unstall multiple packages described at a file
-~~~
+```
+#### 3) Download or Install or update or unstall multiple packages described at a file
+```
 $ vi pkglist.csv
 AalenJohansen
 AATtools
 ipred
 
 $ ./r-packman.rs -o <download|install|uninstall> -p pkglist.csv
-~~~
+```
 
-#### Simple usage
-~~~
+#### 4) Simple usage
+```
 $ ./r-packman.rs -h
 Usage: ./r-packman.rs -o <install|uninstall> -p <package name>
-~~~
+```
 
-#### Detail usage
-~~~
+#### 5) Detail usage
+```
 $ ./r-packman.rs -v
      For examples how to use this proglem,
 
@@ -69,7 +69,7 @@ $ ./r-packman.rs -v
 
      5) Uninstall all packages installed except base and recommended provided by linux or R destribution.
      $ ./r-packman.rs -o uninstall -p all
-~~~
+```
 
 ## Planning
 #### Still checking which part should it be improvied
